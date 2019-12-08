@@ -2,7 +2,6 @@
 using SimpleInjector;
 using System.Linq;
 using System.Reflection;
-using BackendCore.Attributes;
 using BackendCore.Helpers;
 using BackendCore.Data;
 using MediatR;
@@ -16,7 +15,6 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using BackendCore.Security.Services;
 using BackendCore.Security.DataConnection;
-using BackendCore.Filters;
 using BackendCore.Configuration;
 using Microsoft.AspNetCore.Authorization.Policy;
 namespace BackendCore
@@ -42,7 +40,7 @@ namespace BackendCore
 
             services.AddOptions<AppOptions>().Configure<IConfiguration>((settings, configuration) => { configuration.Bind(settings); });
             services.AddMvc(
-                    options => { options.Filters.Add<ActionFilterDispatcher>(); options.EnableEndpointRouting = false; })
+                    options => {  options.EnableEndpointRouting = false; })
                 .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
 
                 ;

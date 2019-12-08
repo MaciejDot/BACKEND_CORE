@@ -24,15 +24,27 @@ namespace BackendCore.Security.Services
         private readonly AppOptions _options;
         private readonly ISqlDataConnection _connection;
         private readonly IDistributedCache _cache;
-        private readonly IHttpContextAccessor _httpContext;
+        private readonly Random _random;
 
-        public UserService(IDistributedCache cache,// IHttpContextAccessor httpContext, 
+        public UserService(IDistributedCache cache, Random random, 
             IOptions<AppOptions> options, ISecurityDataServiceConnector connector)
         {
             _cache = cache;
-            //_httpContext = httpContext;
+            _random = random;
             _options = options.Value;
             _connection = connector.GetConnection();
+        }
+
+        public string RandomString(int size)
+        {
+            StringBuilder builder = new StringBuilder();
+            char ch;
+            for (int i = 0; i < size; i++)
+            {
+                ch = Convert.ToChar(26 * _random.Next(26) + 65);
+                builder.Append(ch);
+            }
+            return builder.ToString();
         }
 
         public async Task<bool> AddUser(RegisterUser user)
@@ -47,12 +59,10 @@ namespace BackendCore.Security.Services
             {
                 return false;
             }
-            /*
-            var stamp = _securityHelper.RandomString(100);
-            var passwordHash = _securityHelper.Hash(stamp, user.Password);
-            var id = _securityHelper.RandomString(80);
+            var stamp = RandomString(100);
+            var passwordHash = GetHash(stamp, user.Password);
+            var id = RandomString(80);
             await _connection.ExecuteAsync(@"Insert into [dbo].[AspNetUsers](Id,Email,UserName,SecurityStamp,PasswordHash,EmailConfirmed) values (@id,@Email,@Username,@stamp,@passwordHash,@confirmed)", new { id, user.Email, user.Username, stamp, passwordHash, confirmed = false });
-            */
             return true;
         }
 
@@ -134,9 +144,6 @@ namespace BackendCore.Security.Services
                 UserName = user.UserName
             };
         }
-
-        public async Task Register() { }
-
         private string GetHash(string stamp, string password)
         {
             var sha256 = SHA256.Create();

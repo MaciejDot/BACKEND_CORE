@@ -11,5 +11,6 @@ namespace BackendCore.Security.Services
     {
         Task<User> Authenticate(AuthenticationModel authenticationModel);
         Task<User> GetTokenForUser(string id);
+        Task<bool> AddUser(RegisterUser user);
     }
 }
