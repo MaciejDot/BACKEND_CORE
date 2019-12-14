@@ -29,7 +29,7 @@ namespace BackendCore.Controllers.Account
         public async Task<ActionResult<TokenDTO>> Get(CancellationToken token)
         {
             var id = User.Claims.Single(x => x.Type == "Id").Value;
-            return new TokenDTO { Token = (await _userService.GetTokenForUser(id)).Token };
+            return new TokenDTO { Token = (await _userService.GetTokenForUser(id, token)).Token };
         }
 
 
@@ -40,7 +40,7 @@ namespace BackendCore.Controllers.Account
             var token = string.Empty;
             try 
             {
-                token = (await _userService.Authenticate(userModel)).Token;
+                token = (await _userService.Authenticate(userModel, cancellationToken)).Token;
             }
             catch
             {

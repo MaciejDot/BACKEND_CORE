@@ -1,7 +1,8 @@
 ﻿using BackendCore.Configuration;
-using BackendCore.Security.DataConnection;
+using BackendCore.Data;
 using BackendCore.Security.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -15,24 +16,23 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-//using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
 namespace BackendCore.Security.Services
 {
     public class UserService : IUserService
     {
         private readonly AppOptions _options;
-        private readonly ISqlDataConnection _connection;
         private readonly IDistributedCache _cache;
         private readonly Random _random;
+        private readonly ApplicationDatabaseContext _context;
 
-        public UserService(IDistributedCache cache, Random random, 
-            IOptions<AppOptions> options, ISecurityDataServiceConnector connector)
+        public UserService( Random random, 
+            IOptions<AppOptions> options, 
+            ApplicationDatabaseContext context)
         {
-            _cache = cache;
+            _context = context;
             _random = random;
             _options = options.Value;
-            _connection = connector.GetConnection();
         }
 
         public string RandomString(int size)
@@ -47,43 +47,31 @@ namespace BackendCore.Security.Services
             return builder.ToString();
         }
 
-        public async Task<bool> AddUser(RegisterUser user)
+        public async Task<bool> AddUser(RegisterUser user, CancellationToken cancellationToken)
         {
-            var count = (await _connection.QueryFirstAsync<int>(@"Select count(*) from 
-                [dbo].[AspNetUsers] where
-                Email = @Username OR
-                UserName = @Username OR
-                Email = @Email OR
-                UserName = @Email", user));
-            if (count > 0)
+            if (await _context.AspNetUsers.AnyAsync(x=>x.Email == user.Email|| x.NormalizedEmail == user.Email || x.UserName == user.Username || x.NormalizedUserName == user.Username, cancellationToken))
             {
                 return false;
             }
             var stamp = RandomString(100);
             var passwordHash = GetHash(stamp, user.Password);
             var id = RandomString(80);
-            await _connection.ExecuteAsync(@"Insert into [dbo].[AspNetUsers](Id,Email,UserName,SecurityStamp,PasswordHash,EmailConfirmed) values (@id,@Email,@Username,@stamp,@passwordHash,@confirmed)", new { id, user.Email, user.Username, stamp, passwordHash, confirmed = false });
+            await _context.AspNetUsers.AddAsync(new AspNetUsers { Id = id, Email = user.Email, UserName = user.Username, SecurityStamp = stamp, PasswordHash = passwordHash }, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
             return true;
         }
 
-        public async Task<User> GetTokenForUser(string id)
+        public async Task<User> GetTokenForUser(string id, CancellationToken cancellationToken)
         {
-            var user = (await _connection.QueryFirstAsync<SimpleUser>(@"Select  Top 1
-                [Id]
-                ,[UserName]
-                ,[Email]
-                ,[EmailConfirmed]
-                ,[PasswordHash]
-                ,[SecurityStamp]
-                from [dbo].[AspNetUsers] where
-                Id = @Id ", new { Id = id}));
-            var roles = (await _connection.QueryAsync<string>(@"Select [Name] from [dbo].[AspNetRoles] 
-                Where [Id] IN (Select [RoleId] from [dbo].[AspNetUserRoles] where [UserId] = @Id)", user)).ToList();
+            var userData = await _context.AspNetUsers.Select(x=> new {User = x, Roles = x.AspNetUserRoles.Select(x => x.Role.Name).ToList() }).SingleAsync(x => x.User.Id == id, cancellationToken);
+            var user = userData.User;
+            var roles = userData.Roles;
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_options.JwtTokenSecret);
 
             var claims = roles.Select(role => new Claim(ClaimTypes.Role, role)).ToList();
             claims.Add(new Claim(ClaimTypes.Email, user.Email));
+            claims.Add(new Claim("Name", user.UserName));
             claims.Add(new Claim("Id", user.Id));
 
             var tokenDescriptor = new SecurityTokenDescriptor
@@ -104,27 +92,22 @@ namespace BackendCore.Security.Services
             };
         }
 
-        public async Task<User> Authenticate(AuthenticationModel authenticationModel)
+        public async Task<User> Authenticate(AuthenticationModel authenticationModel, CancellationToken cancellationToken)
         {
-            var user = (await _connection.QueryFirstAsync<SimpleUser>(@"Select  Top 1
-                [Id]
-                ,[UserName]
-                ,[EmailConfirmed]
-                ,[PasswordHash]
-                ,[SecurityStamp]
-                from [dbo].[AspNetUsers] where
-                Email = @Email ", new { Email = authenticationModel.Email }));
+            var userData = await _context.AspNetUsers
+                .Select(x => new { User = x , Roles = x.AspNetUserRoles.Select(x => x.Role.Name).ToList()})
+                .SingleAsync( x=>x.User.Email == authenticationModel.Email, cancellationToken);
+            var user = userData.User;
             if (GetHash(user.SecurityStamp, authenticationModel.Password) != user.PasswordHash)
             {
                 throw new Exception("not valid model");
             }
-            var roles =( await _connection.QueryAsync<string>(@"Select [Name] from [dbo].[AspNetRoles] 
-                Where [Id] IN (Select [RoleId] from [dbo].[AspNetUserRoles] where [UserId] = @Id)", user)).ToList();
+            var roles = userData.Roles;
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_options.JwtTokenSecret);
             
             var claims = roles.Select(role => new Claim(ClaimTypes.Role, role)).ToList();
-            claims.Add(new Claim(ClaimTypes.Email, authenticationModel.Email));
+            claims.Add(new Claim(ClaimTypes.Email, user.Email));
             claims.Add(new Claim("Id", user.Id));
 
             var tokenDescriptor = new SecurityTokenDescriptor

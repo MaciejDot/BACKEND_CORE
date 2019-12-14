@@ -20,16 +20,18 @@ namespace BackendCore.Domain.Forum.QueryHandler
         }
         public Task<List<GetForumSubjectDTO>> Handle(GetForumSubjectQuery request, CancellationToken token)
         {
-            return Task.FromResult(_context.Subject
+            return _context.Subject
                 .Select(subject => new GetForumSubjectDTO
                 {
                     Id = subject.Id,
                     ThumbnailId = subject.ThumbnailId,
                     Description = subject.Descriprion,
-                    LastActivity = DateTime.Now,//subject.Thread.Any() ? subject.Thread.Max(thread => thread.Post.Any() ? thread.Post.Max(post => post.Created) : thread.Created) : DateTime.MinValue,
-                    PostCount = 1,//subject.Thread.Any() ? subject.Thread.Sum(x => x.Post.Count() + 1) : 0,
+                    LastActivity =DateTime.MinValue,/* subject.Thread.Any() ? 
+                        subject.Thread.Max(thread => thread.Post.Any() ? thread.Post.Max(post => post.Created) : thread.Created) 
+                        : DateTime.MinValue*/
+                    PostCount = 1,//subject.Thread.Sum(x => x.Post.Count() + 1),
                     Title = subject.Title
-                }).ToList());
+                }).ToListAsync(token);
         }
     }
 }

@@ -26,9 +26,9 @@ namespace BackendCore.Controllers.Account
             {
                 return BadRequest();
             }
-            if(await _userService.AddUser(user))
+            if(await _userService.AddUser(user, token))
             {
-                return new TokenDTO { Token = (await _userService.Authenticate(new AuthenticationModel { Email = user.Email, Password = user.Password })).Token };
+                return new TokenDTO { Token = (await _userService.Authenticate(new AuthenticationModel { Email = user.Email, Password = user.Password }, token)).Token };
             }
             return BadRequest();
         }

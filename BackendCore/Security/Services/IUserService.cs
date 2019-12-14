@@ -9,8 +9,8 @@ namespace BackendCore.Security.Services
 {
     public interface IUserService
     {
-        Task<User> Authenticate(AuthenticationModel authenticationModel);
-        Task<User> GetTokenForUser(string id);
-        Task<bool> AddUser(RegisterUser user);
+        Task<User> Authenticate(AuthenticationModel authenticationModel, CancellationToken token);
+        Task<User> GetTokenForUser(string id, CancellationToken token);
+        Task<bool> AddUser(RegisterUser user, CancellationToken token);
     }
 }

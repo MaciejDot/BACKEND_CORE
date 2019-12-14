@@ -24,7 +24,7 @@ namespace BackendCore.Domain.Forum.QueryHandler
                 .OrderByDescending(thread => thread.Created)
                 .Skip(request.SkipThreads)
                 .Take(request.TakeThreads)
-                .Select(thread=>
+                .Select(thread =>
                     new GetForumThreadsDTO
                     {
                         Id = thread.Id,
@@ -32,7 +32,7 @@ namespace BackendCore.Domain.Forum.QueryHandler
                         Created = thread.Created,
                         Title = thread.Title,
                         Replies = thread.Post.Count,
-                        LastActivity = thread.Post.Any() ? thread.Post.Max(post=>post.Created) : thread.Created
+                        LastActivity = thread.Post.Any() ? thread.Post.Max(post => post.Created) : thread.Created
                     }
                 )
                 .ToList());

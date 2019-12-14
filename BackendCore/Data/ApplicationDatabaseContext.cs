@@ -44,7 +44,7 @@ namespace BackendCore.Data
             modelBuilder.Entity<Article>(entity =>
             {
                 entity.ToTable("Article", "Article");
-
+                //entity.HasIndex()
                 entity.Property(e => e.AuthorId)
                     .IsRequired()
                     .HasMaxLength(450);

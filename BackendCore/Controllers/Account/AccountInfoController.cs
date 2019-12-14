@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -18,13 +19,7 @@ namespace BackendCore.Controllers.Account
         [HttpGet]
         public async Task<JsonResult> Get(CancellationToken token)
         {
-            return new JsonResult(new { });
-        }
-
-        [HttpPost]
-        public async Task<JsonResult> Post(CancellationToken token)
-        {
-            return null;
+            return new JsonResult(new { UserName = User.Claims.Single(x=>x.Type=="Name").Value });
         }
     }
 }

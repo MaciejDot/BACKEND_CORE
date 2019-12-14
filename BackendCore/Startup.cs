@@ -14,9 +14,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using BackendCore.Security.Services;
-using BackendCore.Security.DataConnection;
 using BackendCore.Configuration;
 using Microsoft.AspNetCore.Authorization.Policy;
+using System.Security.Claims;
+
 namespace BackendCore
 {
     public class Startup
@@ -36,7 +37,6 @@ namespace BackendCore
             services.AddScoped<IStringToHtmlHelper, StringToHtmlHelper>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<Random>();
-            services.AddScoped<ISecurityDataServiceConnector, SecurityDataServiceConnector>();
 
             services.AddOptions<AppOptions>().Configure<IConfiguration>((settings, configuration) => { configuration.Bind(settings); });
             services.AddMvc(
@@ -72,7 +72,6 @@ namespace BackendCore
                         IssuerSigningKey = new SymmetricSecurityKey(key),
                         ValidateIssuer = false,
                         ValidateAudience = false
-
                     };
                 });
         }
