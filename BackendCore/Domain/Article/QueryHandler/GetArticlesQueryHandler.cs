@@ -11,18 +11,18 @@ using System.Threading.Tasks;
 
 namespace BackendCore.Domain.Article.QueryHandler
 {
-    public class GetArticlesQueryHandler :IRequestHandler<GetArticlesQuery, IEnumerable<GetArticlesDTO>>
+    public class GetArticlesQueryHandler :IRequestHandler<GetArticlesQuery, ArticlesDTO>
     {
         private readonly ApplicationDatabaseContext _context;
         public GetArticlesQueryHandler(ApplicationDatabaseContext applicationDatabaseContext)
         {
             _context = applicationDatabaseContext;
         }
-        public async Task<IEnumerable<GetArticlesDTO>> Handle(GetArticlesQuery request, CancellationToken token)
+        public async Task<ArticlesDTO> Handle(GetArticlesQuery request, CancellationToken token)
         {
-            return await _context.Article
+            var articles = await _context
+                .Article
                 .OrderByDescending(article => article.Created)
-                .Include(article => article.Author)
                 .Skip(request.Skip)
                 .Take(request.Take)
                 .Select(article => new GetArticlesDTO
@@ -33,7 +33,15 @@ namespace BackendCore.Domain.Article.QueryHandler
                     Description = article.Description,
                     Title = article.Title,
                     ThumbnailId = article.ThumbnailId
-                }).ToListAsync(token) ;
+                })
+                .ToListAsync(token);
+            var articlesCount = _context.Article.Count();
+            return new ArticlesDTO
+            {
+                Articles = articles,
+                AllArticlesCount = articlesCount
+            };
+
         }
     }
 }

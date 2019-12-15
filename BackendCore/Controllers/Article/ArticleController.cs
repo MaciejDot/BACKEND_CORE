@@ -11,6 +11,7 @@ using System.Threading;
 using Microsoft.AspNetCore.Authorization;
 using BackendCore.Security.Roles;
 using System.Linq;
+using BackendCore.Domain.Article.DTO;
 
 namespace BackendCore.Controllers.Article
 {
@@ -48,30 +49,18 @@ namespace BackendCore.Controllers.Article
             return new JsonResult(new { Article = await _mediator.Send(requestCommand, token) });
         }
 
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<JsonResult> Get(CancellationToken token)
-        {
-            return await Get(1, token);
-        }
-
         [HttpGet("{page}")]
         [AllowAnonymous]
-        public async Task<JsonResult> Get(int page, CancellationToken token)
+        public async Task<ActionResult<ArticlesDTO>> Get(int page, CancellationToken token)
         {
-            var taskGetArticles = _mediator.Send(new GetArticlesQuery { Skip = 20 * page - 20, Take = 20 }, token);
-            var taskArticlesCount = _mediator.Send(new GetArticleCountQuery(), token);
-            await Task.WhenAll(taskArticlesCount, taskGetArticles);
-            return new JsonResult( new { articles = taskGetArticles.Result, allArticlesCount = taskArticlesCount.Result });
+            return await _mediator.Send(new GetArticlesQuery { Skip = 20 * page - 20, Take = 20 }, token);
         }
 
         [HttpGet("{page}/{id}")]
         [AllowAnonymous]
-        public async Task<JsonResult> Get(int page, int id, CancellationToken token)
+        public async Task<ActionResult<GetArticleDTO>> Get(int page, int id, CancellationToken token)
         {
-            return new JsonResult(
-                await _mediator.Send(new GetArticleQuery { Id = id }, token)
-            );
+            return await _mediator.Send(new GetArticleQuery { Id = id }, token);
         }
     }
 }

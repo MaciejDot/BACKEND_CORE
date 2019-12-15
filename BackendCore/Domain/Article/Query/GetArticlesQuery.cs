@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BackendCore.Domain.Article.Query
 {
-    public class GetArticlesQuery :IRequest<IEnumerable<GetArticlesDTO>>
+    public class GetArticlesQuery :IRequest<ArticlesDTO>
     {
         public int Skip { get; set; }
 

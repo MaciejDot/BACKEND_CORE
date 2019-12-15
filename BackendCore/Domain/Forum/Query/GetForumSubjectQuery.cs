@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BackendCore.Domain.Forum.Query
 {
-    public class GetForumSubjectQuery :IRequest<List<GetForumSubjectDTO>>
+    public class GetForumSubjectQuery :IRequest<SubjectsDTO>
     {
     }
 }

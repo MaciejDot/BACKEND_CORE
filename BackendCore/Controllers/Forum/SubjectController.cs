@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BackendCore.Domain.Forum.Command;
+using BackendCore.Domain.Forum.DTO;
 using BackendCore.Domain.Forum.Query;
 using BackendCore.Models.Forum;
 using BackendCore.Security.Roles;
@@ -27,9 +28,9 @@ namespace BackendCore.Controllers.Forum
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<JsonResult> Get(CancellationToken token)
+        public async Task<ActionResult<SubjectsDTO>> Get(CancellationToken token)
         {
-            return new JsonResult(new { Subjects = await _mediator.Send(new GetForumSubjectQuery(),token) });
+            return await _mediator.Send(new GetForumSubjectQuery(), token);
         }
 
         [HttpPost]
