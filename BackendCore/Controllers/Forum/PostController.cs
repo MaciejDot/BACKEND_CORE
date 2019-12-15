@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BackendCore.Domain.Forum.Command;
+using BackendCore.Domain.Forum.DTO;
 using BackendCore.Domain.Forum.Query;
 using BackendCore.Helpers;
 using BackendCore.Models.Forum;
@@ -29,7 +30,7 @@ namespace BackendCore.Controllers.Forum
 
         [HttpGet("{subjectName}/{threadId}/{page}")]
         [AllowAnonymous]
-        public async Task<ActionResult> GetPosts(string subjectName, int threadId, int page, CancellationToken token)
+        public async Task<ActionResult<PostPageDTO>> GetPosts(string subjectName, int threadId, int page, CancellationToken token)
         {
             if (page < 1 || subjectName == null)
             {
@@ -37,18 +38,10 @@ namespace BackendCore.Controllers.Forum
             }
             try
             {
-                var posts = _mediator.Send(new GetForumPostsQuery { SkipPosts = page * 20 - 20, TakePosts = 20, ThreadId = threadId },token);
-                var allPostsCount = _mediator.Send(new GetForumPostsCountQuery { ThreadId = threadId }, token);
-                var thread = _mediator.Send(new GetForumThreadQuery { ThreadId = threadId }, token);
-                await Task.WhenAll(posts, allPostsCount, thread);
-                if ((allPostsCount.Result > (page - 1) * 20 || (allPostsCount.Result == 0 && page == 1)) && subjectName == thread.Result.SubjectName)
+                var posts = await _mediator.Send(new GetForumPostsQuery { SkipPosts = page * 20 - 20, TakePosts = 20, ThreadId = threadId },token);
+                if ((posts.AllPostsCount > (page - 1) * 20 || (posts.AllPostsCount == 0 && page == 1)) && subjectName == posts.Thread.SubjectName)
                 {
-                    return new JsonResult(new
-                    {
-                        Thread = thread.Result,
-                        Posts = posts.Result,
-                        allPostsCount = allPostsCount.Result
-                    });
+                    return posts;
                 }
             }
             catch

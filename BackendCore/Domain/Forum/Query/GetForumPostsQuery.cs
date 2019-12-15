@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BackendCore.Domain.Forum.Query
 {
-    public class GetForumPostsQuery : IRequest<List<GetForumPostsDTO>>
+    public class GetForumPostsQuery : IRequest<PostPageDTO>
     {
         public int ThreadId { get; set; }
         public int SkipPosts { get; set; }
