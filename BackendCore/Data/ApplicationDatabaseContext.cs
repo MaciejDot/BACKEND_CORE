@@ -6,8 +6,8 @@ namespace BackendCore.Data
 {
     public partial class ApplicationDatabaseContext : DbContext
     {
-        public ApplicationDatabaseContext(ApplicationDatabaseOptionsBuilder builder)
-            :base(builder.GetOptions())
+        public ApplicationDatabaseContext(DbContextOptions<ApplicationDatabaseContext> options)
+            :base(options)
         {
         }
 
@@ -32,10 +32,6 @@ namespace BackendCore.Data
         public virtual DbSet<Thread> Thread { get; set; }
         public virtual DbSet<Thumbnails> Thumbnails { get; set; }
         public virtual DbSet<Thumbnails1> Thumbnails1 { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -91,7 +87,7 @@ namespace BackendCore.Data
                     .HasName("RoleNameIndex")
                     .IsUnique()
                     .HasFilter("([NormalizedName] IS NOT NULL)");
-
+               
                 entity.Property(e => e.Id).ValueGeneratedNever();
 
                 entity.Property(e => e.Name).HasMaxLength(256);

@@ -14,9 +14,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using BackendCore.Security.Services;
-using BackendCore.Configuration;
 using Microsoft.AspNetCore.Authorization.Policy;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore;
 
 namespace BackendCore
 {
@@ -32,13 +33,10 @@ namespace BackendCore
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMediatR(Assembly.GetExecutingAssembly());
-            services.AddScoped<ApplicationDatabaseContext>();
-            services.AddScoped<ApplicationDatabaseOptionsBuilder>();
+            services.AddDbContext<ApplicationDatabaseContext>(options => options.UseSqlServer(Configuration.GetConnectionString("ApplicationDatabase")));
             services.AddScoped<IStringToHtmlHelper, StringToHtmlHelper>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<Random>();
-
-            services.AddOptions<AppOptions>().Configure<IConfiguration>((settings, configuration) => { configuration.Bind(settings); });
             services.AddMvc(
                     options => {  options.EnableEndpointRouting = false; })
                 .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
@@ -53,9 +51,9 @@ namespace BackendCore
                     builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
                 });
             });
-
-            var appOptions = Configuration.Get<AppOptions>();
-            var key = Encoding.ASCII.GetBytes(appOptions.JwtTokenSecret);
+            
+            var rsa = RSA.Create(16384);
+            UserService.RSAKey = rsa;
             services
                 .AddAuthentication(x =>
                 {
@@ -69,7 +67,7 @@ namespace BackendCore
                     x.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        IssuerSigningKey = new RsaSecurityKey(rsa),
                         ValidateIssuer = false,
                         ValidateAudience = false
                     };

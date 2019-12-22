@@ -13,7 +13,9 @@
       "launchBrowser": true,
       "launchUrl": "api/values",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "SQLCONNSTR_ApplicationDatabase": "data source=(localdb)\\MSSQLLocalDB;initial catalog=ApplicationDatabase;integrated security=True;MultipleActiveResultSets=True;Connection Timeout =5;"
+
       }
     },
     "BackendCore": {
@@ -22,7 +24,9 @@
       "launchUrl": "api/values",
       "applicationUrl": "https://localhost:5001;http://localhost:5000",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "SQLCONNSTR_ApplicationDatabase": "data source=(localdb)\\MSSQLLocalDB;initial catalog=ApplicationDatabase;integrated security=True;MultipleActiveResultSets=True;Connection Timeout =5;"
+
       }
     }
   }

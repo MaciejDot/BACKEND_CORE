@@ -1,4 +1,4 @@
-﻿using BackendCore.Configuration;
+﻿
 using BackendCore.Data;
 using BackendCore.Security.Models;
 using Microsoft.AspNetCore.Http;
@@ -21,18 +21,15 @@ namespace BackendCore.Security.Services
 {
     public class UserService : IUserService
     {
-        private readonly AppOptions _options;
-        private readonly IDistributedCache _cache;
         private readonly Random _random;
         private readonly ApplicationDatabaseContext _context;
+        public static RSA RSAKey { get; set; }
 
-        public UserService( Random random, 
-            IOptions<AppOptions> options, 
+        public UserService( Random random,
             ApplicationDatabaseContext context)
         {
             _context = context;
             _random = random;
-            _options = options.Value;
         }
 
         public string RandomString(int size)
@@ -67,7 +64,6 @@ namespace BackendCore.Security.Services
             var user = userData.User;
             var roles = userData.Roles;
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_options.JwtTokenSecret);
 
             var claims = roles.Select(role => new Claim(ClaimTypes.Role, role)).ToList();
             claims.Add(new Claim(ClaimTypes.Email, user.Email));
@@ -78,7 +74,7 @@ namespace BackendCore.Security.Services
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.Now.AddMinutes(5),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                SigningCredentials = new SigningCredentials(new RsaSecurityKey(RSAKey), SecurityAlgorithms.RsaSha512Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
@@ -104,8 +100,6 @@ namespace BackendCore.Security.Services
             }
             var roles = userData.Roles;
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_options.JwtTokenSecret);
-            
             var claims = roles.Select(role => new Claim(ClaimTypes.Role, role)).ToList();
             claims.Add(new Claim(ClaimTypes.Email, user.Email));
             claims.Add(new Claim("Id", user.Id));
@@ -114,7 +108,7 @@ namespace BackendCore.Security.Services
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.Now.AddMinutes(5),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                SigningCredentials = new SigningCredentials(new RsaSecurityKey(RSAKey), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
