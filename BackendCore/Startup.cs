@@ -76,7 +76,8 @@ namespace BackendCore
 
         public void Configure(IApplicationBuilder app)
         {
-            app.UseHsts();
+            //app.UseHsts();
+            app.UseDeveloperExceptionPage();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseCors();

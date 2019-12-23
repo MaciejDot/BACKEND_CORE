@@ -74,8 +74,9 @@ namespace BackendCore.Security.Services
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.Now.AddMinutes(5),
-                SigningCredentials = new SigningCredentials(new RsaSecurityKey(RSAKey), SecurityAlgorithms.RsaSha512Signature)
+                SigningCredentials = new SigningCredentials(new RsaSecurityKey(RSAKey), SecurityAlgorithms.RsaSsaPssSha256)
             };
+
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
             return new User
@@ -98,17 +99,19 @@ namespace BackendCore.Security.Services
             {
                 throw new Exception("not valid model");
             }
+
             var roles = userData.Roles;
             var tokenHandler = new JwtSecurityTokenHandler();
             var claims = roles.Select(role => new Claim(ClaimTypes.Role, role)).ToList();
             claims.Add(new Claim(ClaimTypes.Email, user.Email));
             claims.Add(new Claim("Id", user.Id));
+            claims.Add(new Claim("Name", user.UserName));
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.Now.AddMinutes(5),
-                SigningCredentials = new SigningCredentials(new RsaSecurityKey(RSAKey), SecurityAlgorithms.HmacSha256Signature)
+                SigningCredentials = new SigningCredentials(new RsaSecurityKey(RSAKey), SecurityAlgorithms.RsaSha256Signature, SecurityAlgorithms.Sha256Digest)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
