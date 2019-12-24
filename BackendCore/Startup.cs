@@ -13,11 +13,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using BackendCore.Security.Services;
 using Microsoft.AspNetCore.Authorization.Policy;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using RestSharp;
+using BackendCore.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace BackendCore
 {
@@ -35,8 +37,6 @@ namespace BackendCore
             services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddDbContext<ApplicationDatabaseContext>(options => options.UseSqlServer(Configuration.GetConnectionString("ApplicationDatabase")));
             services.AddScoped<IStringToHtmlHelper, StringToHtmlHelper>();
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<Random>();
             services.AddMvc(
                     options => {  options.EnableEndpointRouting = false; })
                 .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
@@ -51,9 +51,12 @@ namespace BackendCore
                     builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
                 });
             });
-            
-            var rsa = RSA.Create(16384);
-            UserService.RSAKey = rsa;
+            var request = new RestRequest(Configuration.GetValue<string>("TokenServiceRSAAddress"), Method.GET);
+            var parameters = new RestClient().Execute<RSAPublicParameters>(request).Data;
+            var rsa = RSA.Create(new RSAParameters { 
+                Exponent = Convert.FromBase64String( parameters.Exponent),
+                Modulus = Convert.FromBase64String(parameters.Modulus)
+            });
             services
                 .AddAuthentication(x =>
                 {
@@ -74,9 +77,16 @@ namespace BackendCore
                 });
         }
 
-        public void Configure(IApplicationBuilder app)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            //app.UseHsts();
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseHsts();
+            }
             app.UseDeveloperExceptionPage();
             app.UseAuthentication();
             app.UseAuthorization();
